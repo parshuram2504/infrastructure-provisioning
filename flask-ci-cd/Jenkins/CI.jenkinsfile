@@ -1,0 +1,66 @@
+peline {
+
+    agent any
+
+    environment {
+        PYTHON = "python3"
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/parshuram2504/flask-ci-cd.git'
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh '''
+                    python3 -m venv venv
+                    . venv/bin/activate
+                    pip install --upgrade pip
+                    pip install -r app/requirements.txt
+                '''
+            }
+        }
+
+        stage('Run Unit Tests') {
+            steps {
+                sh '''
+                    . venv/bin/activate
+                    cd app
+                    pytest
+                '''
+            }
+        }
+
+        stage('Archive Application') {
+            steps {
+                archiveArtifacts artifacts: 'app/**', fingerprint: true
+            }
+        }
+
+        stage('Trigger CD') {
+            steps {
+                build job: 'CD-Pipeline',
+                      wait: false
+            }
+        }
+
+    }
+
+    post {
+
+        success {
+            echo "CI Successful"
+        }
+
+        failure {
+            echo "CI Failed"
+        }
+
+    }
+
+}
