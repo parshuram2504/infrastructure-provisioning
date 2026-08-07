@@ -42,13 +42,13 @@ pipeline {
             }
         }
 
-        stage('Trigger CD') {
-            steps {
-                build job: 'CD-Pipeline',
-                      wait: false
-            }
-        }
-
+//        stage('Trigger CD') {
+//            steps {
+//                build job: 'CD-Pipeline',
+//                      wait: false
+//            }
+//        }
+//
     }
 
     post {
