@@ -30,7 +30,7 @@ pipeline {
             steps {
                 sh '''
                     . venv/bin/activate
-                    cd app
+                    cd flask-ci-cd/app
                     pytest
                 '''
             }
@@ -38,7 +38,7 @@ pipeline {
 
         stage('Archive Application') {
             steps {
-                archiveArtifacts artifacts: 'app/**', fingerprint: true
+                archiveArtifacts artifacts: 'flask-ci-cd/app/**', fingerprint: true
             }
         }
 
@@ -52,6 +52,10 @@ pipeline {
     }
 
     post {
+
+        always {
+             cleanWs()
+        }
 
         success {
             echo "CI Successful"
