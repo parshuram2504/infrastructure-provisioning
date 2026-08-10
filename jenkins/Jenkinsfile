@@ -42,18 +42,20 @@ pipeline {
                 checkout scm
             }
         }
-stage('AWS Authentication Test') {
-    steps {
-        withCredentials([
-            [$class: 'AmazonWebServicesCredentialsBinding',
-             credentialsId: 'jenkins-aws']
-        ]) {
-            sh '''
-                aws sts get-caller-identity
-            '''
+
+        stage('AWS Authentication Test') {
+            steps {
+                withCredentials([
+                    [$class: 'AmazonWebServicesCredentialsBinding',
+                     credentialsId: 'jenkins-aws']
+                ]) {
+                    sh '''
+                        aws sts get-caller-identity
+                    '''
+                }
+            }
         }
-    }
-}
+
         stage('Terraform Init') {
             steps {
                 dir('terraform') {
@@ -71,51 +73,51 @@ stage('AWS Authentication Test') {
         }
 
         stage('Terraform Plan') {
-    steps {
-        withCredentials([
-            [$class: 'AmazonWebServicesCredentialsBinding',
-             credentialsId: 'jenkins-aws']
-        ]) {
-            dir('terraform') {
-                sh """
-                    terraform plan \
-                    -var="aws_region=${params.AWS_REGION}" \
-                    -var="ami_id=${params.AMI_ID}" \
-                    -var="instance_type=${params.INSTANCE_TYPE}" \
-                    -var="instance_name=${params.INSTANCE_NAME}" \
-                    -var="environment=${params.ENVIRONMENT}"
-                """
+            steps {
+                withCredentials([
+                    [$class: 'AmazonWebServicesCredentialsBinding',
+                     credentialsId: 'jenkins-aws']
+                ]) {
+                    dir('terraform') {
+                        sh """
+                            terraform plan \
+                            -var="aws_region=${params.AWS_REGION}" \
+                            -var="ami_id=${params.AMI_ID}" \
+                            -var="instance_type=${params.INSTANCE_TYPE}" \
+                            -var="instance_name=${params.INSTANCE_NAME}" \
+                            -var="environment=${params.ENVIRONMENT}"
+                        """
+                    }
+                }
             }
         }
-    }
-}
 
         stage('Approval') {
             steps {
-                input message: "Do you want to create ${params.INSTANCE_NAME}?", 
+                input message: "Do you want to create ${params.INSTANCE_NAME}?",
                       ok: "Proceed"
             }
         }
 
-stage('Terraform Apply') {
-    steps {
-        withCredentials([
-            [$class: 'AmazonWebServicesCredentialsBinding',
-             credentialsId: 'jenkins-aws']
-        ]) {
-            dir('terraform') {
-                sh """
-                    terraform apply -auto-approve \
-                    -var="aws_region=${params.AWS_REGION}" \
-                    -var="ami_id=${params.AMI_ID}" \
-                    -var="instance_type=${params.INSTANCE_TYPE}" \
-                    -var="instance_name=${params.INSTANCE_NAME}" \
-                    -var="environment=${params.ENVIRONMENT}"
-                """
+        stage('Terraform Apply') {
+            steps {
+                withCredentials([
+                    [$class: 'AmazonWebServicesCredentialsBinding',
+                     credentialsId: 'jenkins-aws']
+                ]) {
+                    dir('terraform') {
+                        sh """
+                            terraform apply -auto-approve \
+                            -var="aws_region=${params.AWS_REGION}" \
+                            -var="ami_id=${params.AMI_ID}" \
+                            -var="instance_type=${params.INSTANCE_TYPE}" \
+                            -var="instance_name=${params.INSTANCE_NAME}" \
+                            -var="environment=${params.ENVIRONMENT}"
+                        """
+                    }
+                }
             }
         }
-    }
-}
 
         stage('Terraform Output') {
             steps {
@@ -124,10 +126,11 @@ stage('Terraform Apply') {
                 }
             }
         }
-        post {
-    always {
-        cleanWs()
     }
-}
+
+    post {
+        always {
+            cleanWs()
+        }
     }
 }
