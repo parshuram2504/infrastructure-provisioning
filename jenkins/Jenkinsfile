@@ -71,19 +71,24 @@ stage('AWS Authentication Test') {
         }
 
         stage('Terraform Plan') {
-            steps {
-                dir('terraform') {
-                    sh """
-                        terraform plan \
-                        -var="aws_region=${params.AWS_REGION}" \
-                        -var="ami_id=${params.AMI_ID}" \
-                        -var="instance_type=${params.INSTANCE_TYPE}" \
-                        -var="instance_name=${params.INSTANCE_NAME}" \
-                        -var="environment=${params.ENVIRONMENT}"
-                    """
-                }
+    steps {
+        withCredentials([
+            [$class: 'AmazonWebServicesCredentialsBinding',
+             credentialsId: 'jenkins-aws']
+        ]) {
+            dir('terraform') {
+                sh """
+                    terraform plan \
+                    -var="aws_region=${params.AWS_REGION}" \
+                    -var="ami_id=${params.AMI_ID}" \
+                    -var="instance_type=${params.INSTANCE_TYPE}" \
+                    -var="instance_name=${params.INSTANCE_NAME}" \
+                    -var="environment=${params.ENVIRONMENT}"
+                """
             }
         }
+    }
+}
 
         stage('Approval') {
             steps {
