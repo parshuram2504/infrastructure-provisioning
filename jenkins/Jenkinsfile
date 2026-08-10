@@ -97,20 +97,25 @@ stage('AWS Authentication Test') {
             }
         }
 
-        stage('Terraform Apply') {
-            steps {
-                dir('terraform') {
-                    sh """
-                        terraform apply -auto-approve \
-                        -var="aws_region=${params.AWS_REGION}" \
-                        -var="ami_id=${params.AMI_ID}" \
-                        -var="instance_type=${params.INSTANCE_TYPE}" \
-                        -var="instance_name=${params.INSTANCE_NAME}" \
-                        -var="environment=${params.ENVIRONMENT}"
-                    """
-                }
+stage('Terraform Apply') {
+    steps {
+        withCredentials([
+            [$class: 'AmazonWebServicesCredentialsBinding',
+             credentialsId: 'jenkins-aws']
+        ]) {
+            dir('terraform') {
+                sh """
+                    terraform apply -auto-approve \
+                    -var="aws_region=${params.AWS_REGION}" \
+                    -var="ami_id=${params.AMI_ID}" \
+                    -var="instance_type=${params.INSTANCE_TYPE}" \
+                    -var="instance_name=${params.INSTANCE_NAME}" \
+                    -var="environment=${params.ENVIRONMENT}"
+                """
             }
         }
+    }
+}
 
         stage('Terraform Output') {
             steps {
@@ -119,5 +124,10 @@ stage('AWS Authentication Test') {
                 }
             }
         }
+        post {
+    always {
+        cleanWs()
+    }
+}
     }
 }
