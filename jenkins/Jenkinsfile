@@ -92,13 +92,6 @@ pipeline {
             }
         }
 
-        stage('Approval') {
-            steps {
-                input message: "Do you want to create ${params.INSTANCE_NAME}?",
-                      ok: "Proceed"
-            }
-        }
-
         stage('Terraform Apply') {
             steps {
                 withCredentials([
