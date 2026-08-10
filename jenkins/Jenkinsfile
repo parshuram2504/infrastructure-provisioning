@@ -58,5 +58,52 @@ pipeline {
                 }
             }
         }
+
+        stage('Terraform Plan') {
+            steps {
+                dir('infrastructure') {
+
+                    sh """
+                        terraform plan \
+                        -var="aws_region=${params.AWS_REGION}" \
+                        -var="ami_id=${params.AMI_ID}" \
+                        -var="instance_type=${params.INSTANCE_TYPE}" \
+                        -var="instance_name=${params.INSTANCE_NAME}" \
+                        -var="environment=${params.ENVIRONMENT}"
+                    """
+                }
+            }
+        }
+
+        stage('Approval') {
+            steps {
+                input message: "Do you want to create the EC2 instance?", 
+                      ok: "Proceed"
+            }
+        }
+
+        stage('Terraform Apply') {
+            steps {
+                dir('infrastructure') {
+
+                    sh """
+                        terraform apply -auto-approve \
+                        -var="aws_region=${params.AWS_REGION}" \
+                        -var="ami_id=${params.AMI_ID}" \
+                        -var="instance_type=${params.INSTANCE_TYPE}" \
+                        -var="instance_name=${params.INSTANCE_NAME}" \
+                        -var="environment=${params.ENVIRONMENT}"
+                    """
+                }
+            }
+        }
+
+        stage('Terraform Output') {
+            steps {
+                dir('infrastructure') {
+                    sh 'terraform output'
+                }
+            }
+        }
     }
 }
