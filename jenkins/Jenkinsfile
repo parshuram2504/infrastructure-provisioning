@@ -7,7 +7,7 @@ pipeline {
         choice(
             name: 'ENVIRONMENT',
             choices: ['dev', 'qa', 'prod'],
-            description: 'Select environment'
+            description: 'Select deployment environment'
         )
 
         string(
@@ -17,21 +17,45 @@ pipeline {
         )
 
         string(
+            name: 'AMI_ID',
+            defaultValue: '',
+            description: 'AMI ID'
+        )
+
+        choice(
+            name: 'INSTANCE_TYPE',
+            choices: ['t2.micro', 't3.micro', 't3.small'],
+            description: 'EC2 instance type'
+        )
+
+        string(
             name: 'INSTANCE_NAME',
-            defaultValue: 'test-server',
+            defaultValue: 'dev-server',
             description: 'EC2 instance name'
         )
     }
 
     stages {
 
-        stage('Show Parameters') {
+        stage('Checkout') {
             steps {
-                echo "================================"
-                echo "Environment  : ${params.ENVIRONMENT}"
-                echo "AWS Region   : ${params.AWS_REGION}"
-                echo "Instance Name: ${params.INSTANCE_NAME}"
-                echo "================================"
+                checkout scm
+            }
+        }
+
+        stage('Terraform Init') {
+            steps {
+                dir('infrastructure') {
+                    sh 'terraform init'
+                }
+            }
+        }
+
+        stage('Terraform Validate') {
+            steps {
+                dir('infrastructure') {
+                    sh 'terraform validate'
+                }
             }
         }
     }
