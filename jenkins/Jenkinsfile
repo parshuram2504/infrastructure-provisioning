@@ -25,7 +25,7 @@ pipeline {
         choice(
             name: 'INSTANCE_TYPE',
             choices: ['t2.micro', 't3.micro', 't3.small'],
-            description: 'EC2 instance type'
+            description: 'Select EC2 instance type'
         )
 
         string(
@@ -42,19 +42,10 @@ pipeline {
                 checkout scm
             }
         }
-stage('Check Workspace') {
-    steps {
-        sh '''
-            echo "===== Workspace ====="
-            pwd
-            echo "===== Files ====="
-            find . -maxdepth 3 -type f -print
-        '''
-    }
-}
+
         stage('Terraform Init') {
             steps {
-                dir('infrastructure') {
+                dir('terraform') {
                     sh 'terraform init'
                 }
             }
@@ -62,7 +53,7 @@ stage('Check Workspace') {
 
         stage('Terraform Validate') {
             steps {
-                dir('infrastructure') {
+                dir('terraform') {
                     sh 'terraform validate'
                 }
             }
@@ -70,8 +61,7 @@ stage('Check Workspace') {
 
         stage('Terraform Plan') {
             steps {
-                dir('infrastructure') {
-
+                dir('terraform') {
                     sh """
                         terraform plan \
                         -var="aws_region=${params.AWS_REGION}" \
@@ -86,15 +76,14 @@ stage('Check Workspace') {
 
         stage('Approval') {
             steps {
-                input message: "Do you want to create the EC2 instance?", 
+                input message: "Do you want to create ${params.INSTANCE_NAME}?", 
                       ok: "Proceed"
             }
         }
 
         stage('Terraform Apply') {
             steps {
-                dir('infrastructure') {
-
+                dir('terraform') {
                     sh """
                         terraform apply -auto-approve \
                         -var="aws_region=${params.AWS_REGION}" \
@@ -109,7 +98,7 @@ stage('Check Workspace') {
 
         stage('Terraform Output') {
             steps {
-                dir('infrastructure') {
+                dir('terraform') {
                     sh 'terraform output'
                 }
             }
