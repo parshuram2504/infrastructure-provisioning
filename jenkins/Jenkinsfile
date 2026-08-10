@@ -42,7 +42,18 @@ pipeline {
                 checkout scm
             }
         }
-
+stage('AWS Authentication Test') {
+    steps {
+        withCredentials([
+            [$class: 'AmazonWebServicesCredentialsBinding',
+             credentialsId: 'jenkins-aws']
+        ]) {
+            sh '''
+                aws sts get-caller-identity
+            '''
+        }
+    }
+}
         stage('Terraform Init') {
             steps {
                 dir('terraform') {
