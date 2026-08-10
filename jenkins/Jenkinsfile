@@ -50,6 +50,7 @@ pipeline {
                      credentialsId: 'jenkins-aws']
                 ]) {
                     sh '''
+                        echo "===== AWS Identity ====="
                         aws sts get-caller-identity
                     '''
                 }
@@ -59,7 +60,9 @@ pipeline {
         stage('Terraform Init') {
             steps {
                 dir('terraform') {
-                    sh 'terraform init'
+                    sh '''
+                        terraform init
+                    '''
                 }
             }
         }
@@ -67,7 +70,9 @@ pipeline {
         stage('Terraform Validate') {
             steps {
                 dir('terraform') {
-                    sh 'terraform validate'
+                    sh '''
+                        terraform validate
+                    '''
                 }
             }
         }
@@ -114,8 +119,63 @@ pipeline {
 
         stage('Terraform Output') {
             steps {
-                dir('terraform') {
-                    sh 'terraform output'
+                withCredentials([
+                    [$class: 'AmazonWebServicesCredentialsBinding',
+                     credentialsId: 'jenkins-aws']
+                ]) {
+                    dir('terraform') {
+                        sh '''
+                            echo "===== TERRAFORM OUTPUT =====" > instance-details.txt
+
+                            terraform output >> instance-details.txt
+
+                            echo "" >> instance-details.txt
+                            echo "===== AWS INSTANCE DETAILS =====" >> instance-details.txt
+
+                            INSTANCE_ID=$(terraform output -raw instance_id)
+
+                            aws ec2 describe-instances \
+                                --instance-ids "$INSTANCE_ID" \
+                                --region "$AWS_REGION" \
+                                --query 'Reservations[0].Instances[0].{
+                                    InstanceId:InstanceId,
+                                    InstanceType:InstanceType,
+                                    State:State.Name,
+                                    AvailabilityZone:Placement.AvailabilityZone,
+                                    PrivateIP:PrivateIpAddress,
+                                    PublicIP:PublicIpAddress,
+                                    VPC:VpcId,
+                                    Subnet:SubnetId,
+                                    AMI:ImageId,
+                                    Name:Tags[?Key==`Name`].Value|[0],
+                                    Environment:Tags[?Key==`Environment`].Value|[0]
+                                }' \
+                                --output table >> instance-details.txt
+
+                            echo "" >> instance-details.txt
+                            echo "===== AWS REGION =====" >> instance-details.txt
+
+                            echo "$AWS_REGION" >> instance-details.txt
+
+                            echo ""
+                            echo "===== INSTANCE DETAILS ====="
+                            cat instance-details.txt
+                        '''
+                    }
+                }
+            }
+
+            post {
+                always {
+                    archiveArtifacts(
+                        artifacts: 'terraform/instance-details.txt',
+                        fingerprint: true
+                    )
+
+                    archiveArtifacts(
+                        artifacts: 'terraform/terraform.tfstate',
+                        fingerprint: true
+                    )
                 }
             }
         }
