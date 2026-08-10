@@ -1,0 +1,38 @@
+pipeline {
+
+    agent any
+
+    parameters {
+
+        choice(
+            name: 'ENVIRONMENT',
+            choices: ['dev', 'qa', 'prod'],
+            description: 'Select environment'
+        )
+
+        string(
+            name: 'AWS_REGION',
+            defaultValue: 'ap-south-1',
+            description: 'AWS region'
+        )
+
+        string(
+            name: 'INSTANCE_NAME',
+            defaultValue: 'test-server',
+            description: 'EC2 instance name'
+        )
+    }
+
+    stages {
+
+        stage('Show Parameters') {
+            steps {
+                echo "================================"
+                echo "Environment  : ${params.ENVIRONMENT}"
+                echo "AWS Region   : ${params.AWS_REGION}"
+                echo "Instance Name: ${params.INSTANCE_NAME}"
+                echo "================================"
+            }
+        }
+    }
+}
