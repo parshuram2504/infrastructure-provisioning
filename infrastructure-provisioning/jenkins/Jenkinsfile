@@ -1,0 +1,154 @@
+pipeline {
+
+    agent any
+
+    parameters {
+
+        choice(
+            name: 'AWS_REGION',
+            choices: [
+                'ap-south-1',
+                'us-east-1'
+            ],
+            description: 'AWS region where infrastructure will be created'
+        )
+
+        string(
+            name: 'PROJECT_NAME',
+            defaultValue: 'shopverse',
+            description: 'Project name'
+        )
+
+        string(
+            name: 'VPC_CIDR',
+            defaultValue: '10.0.0.0/16',
+            description: 'VPC CIDR block'
+        )
+
+        string(
+            name: 'CLUSTER_NAME',
+            defaultValue: 'shopverse-cluster',
+            description: 'EKS cluster name'
+        )
+
+        choice(
+            name: 'CLUSTER_VERSION',
+            choices: [
+                '1.36'
+            ],
+            description: 'EKS Kubernetes version'
+        )
+
+        choice(
+            name: 'NODE_INSTANCE_TYPE',
+            choices: [
+                't3.micro',
+                't3.small',
+                't3.medium'
+            ],
+            description: 'EKS worker node instance type'
+        )
+
+        string(
+            name: 'NODE_DESIRED_SIZE',
+            defaultValue: '2',
+            description: 'Desired number of worker nodes'
+        )
+
+        string(
+            name: 'NODE_MIN_SIZE',
+            defaultValue: '1',
+            description: 'Minimum number of worker nodes'
+        )
+
+        string(
+            name: 'NODE_MAX_SIZE',
+            defaultValue: '3',
+            description: 'Maximum number of worker nodes'
+        )
+
+        choice(
+            name: 'CREATE_JUMP_SERVER',
+            choices: [
+                'true',
+                'false'
+            ],
+            description: 'Whether to create the jump server'
+        )
+
+        choice(
+            name: 'JUMP_SERVER_INSTANCE_TYPE',
+            choices: [
+                't2.micro',
+                't2.small',
+                't2.medium'
+            ],
+            description: 'Jump server EC2 instance type'
+        )
+    }
+
+    environment {
+        AWS_DEFAULT_REGION = "${params.AWS_REGION}"
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Terraform Init') {
+            steps {
+                dir('terraform') {
+                    sh '''
+                        terraform init
+                    '''
+                }
+            }
+        }
+
+        stage('Terraform Validate') {
+            steps {
+                dir('terraform') {
+                    sh '''
+                        terraform validate
+                    '''
+                }
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                dir('terraform') {
+                    sh """
+                        terraform plan \
+                          -var="aws_region=${params.AWS_REGION}" \
+                          -var="project_name=${params.PROJECT_NAME}" \
+                          -var="vpc_cidr=${params.VPC_CIDR}" \
+                          -var="cluster_name=${params.CLUSTER_NAME}" \
+                          -var="cluster_version=${params.CLUSTER_VERSION}" \
+                          -var="node_instance_type=${params.NODE_INSTANCE_TYPE}" \
+                          -var="node_desired_size=${params.NODE_DESIRED_SIZE}" \
+                          -var="node_min_size=${params.NODE_MIN_SIZE}" \
+                          -var="node_max_size=${params.NODE_MAX_SIZE}" \
+                          -var="create_jump_server=${params.CREATE_JUMP_SERVER}" \
+                          -var="jump_server_instance_type=${params.JUMP_SERVER_INSTANCE_TYPE}"
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+
+        success {
+            echo 'Terraform plan completed successfully.'
+        }
+
+        failure {
+            echo 'Terraform plan failed. Check the console output.'
+        }
+    }
+}
