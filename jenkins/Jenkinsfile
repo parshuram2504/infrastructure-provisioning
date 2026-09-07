@@ -14,6 +14,11 @@ pipeline {
         )
 
         string(
+        name: 'TF_STATE_BUCKET',
+        defaultValue: 'shopverse-terraform-state-parshu',
+        description: 'S3 bucket used for Terraform remote state'
+
+        string(
             name: 'PROJECT_NAME',
             defaultValue: 'shopverse',
             description: 'Project name'
