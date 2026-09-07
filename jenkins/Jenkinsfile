@@ -163,13 +163,16 @@ pipeline {
     }
 
     post {
+        always {
+           cleanWs()
+        }
 
         success {
-            echo 'Terraform plan completed successfully.'
+        echo 'Terraform plan completed successfully.'
         }
 
         failure {
-            echo 'Terraform plan failed. Check the console output.'
+        echo 'Terraform plan failed. Check the console output.'
         }
     }
 }
