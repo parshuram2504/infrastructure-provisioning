@@ -176,12 +176,17 @@ pipeline {
     }
 
     steps {
-        dir('terraform') {
+           withCredentials([
+            [$class: 'AmazonWebServicesCredentialsBinding',
+             credentialsId: 'jenkins-aws']
+          ]){
+          dir('terraform') {
             sh '''
                 terraform apply -auto-approve tfplan
             '''
         }
     }
+}
 }
     }
 
