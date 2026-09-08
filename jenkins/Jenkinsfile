@@ -85,9 +85,9 @@ pipeline {
         choice(
             name: 'JUMP_SERVER_INSTANCE_TYPE',
             choices: [
-                't2.micro',
-                't2.small',
-                't2.medium'
+                't3.micro',
+                't3.small',
+                't3.medium'
             ],
             description: 'Jump server EC2 instance type'
         )
