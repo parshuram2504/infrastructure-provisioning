@@ -96,6 +96,11 @@ pipeline {
             defaultValue: false,
             description: 'Apply the Terraform plan'
         )
+booleanParam(
+    name: 'TERRAFORM_DESTROY',
+    defaultValue: false,
+    description: 'Destroy all Terraform-managed infrastructure'
+)
     }
 
     environment {
@@ -187,6 +192,26 @@ pipeline {
         }
     }
 }
+}
+stage('Terraform Destroy') {
+    when {
+        expression {
+            params.TERRAFORM_DESTROY == true
+        }
+    }
+
+    steps {
+        withCredentials([
+            [$class: 'AmazonWebServicesCredentialsBinding',
+             credentialsId: 'jenkins-aws']
+        ]) {
+            dir('terraform') {
+                sh '''
+                    terraform destroy -auto-approve
+                '''
+            }
+        }
+    }
 }
     }
 
