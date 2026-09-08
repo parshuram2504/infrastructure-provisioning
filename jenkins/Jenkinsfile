@@ -163,6 +163,25 @@ pipeline {
         }
     }
     }
+          stage('Terraform Apply') {
+    input {
+        message "Do you want to apply the Terraform plan?"
+        ok "Apply"
+    }
+
+    steps {
+        withCredentials([
+            [$class: 'AmazonWebServicesCredentialsBinding',
+             credentialsId: 'jenkins-aws']
+        ]) {
+            dir('terraform') {
+                sh '''
+                    terraform apply -auto-approve tfplan
+                '''
+            }
+        }
+    }
+}
     }
 
     post {
