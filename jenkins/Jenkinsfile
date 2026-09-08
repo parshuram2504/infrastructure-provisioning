@@ -155,7 +155,9 @@ pipeline {
                       -var="node_max_size=${params.NODE_MAX_SIZE}" \
                       -var="create_jump_server=${params.CREATE_JUMP_SERVER}" \
                       -var="jump_server_instance_type=${params.JUMP_SERVER_INSTANCE_TYPE}" \
-                      -out=tfplan
+                      -out=tfplan 
+                      
+                terraform show -no-color tfplan > tfplan.txt
                 """
             }
         }
@@ -165,7 +167,7 @@ pipeline {
 
     post {
         always {
-           archiveArtifacts artifacts: 'terraform/tfplan', fingerprint: true, allowEmptyArchive: true
+           archiveArtifacts artifacts: 'terraform/tfplan.txt', fingerprint: true, allowEmptyArchive: true
            cleanWs()
         }
 
