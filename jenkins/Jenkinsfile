@@ -91,6 +91,11 @@ pipeline {
             ],
             description: 'Jump server EC2 instance type'
         )
+        booleanParam(
+            name: 'TERRAFORM_APPLY',
+            defaultValue: false,
+            description: 'Apply the Terraform plan'
+        )
     }
 
     environment {
@@ -164,21 +169,17 @@ pipeline {
     }
     }
           stage('Terraform Apply') {
-    input {
-        message "Do you want to apply the Terraform plan?"
-        ok "Apply"
+    when {
+        expression {
+            params.TERRAFORM_APPLY == true
+        }
     }
 
     steps {
-        withCredentials([
-            [$class: 'AmazonWebServicesCredentialsBinding',
-             credentialsId: 'jenkins-aws']
-        ]) {
-            dir('terraform') {
-                sh '''
-                    terraform apply -auto-approve tfplan
-                '''
-            }
+        dir('terraform') {
+            sh '''
+                terraform apply -auto-approve tfplan
+            '''
         }
     }
 }
